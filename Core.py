@@ -5,9 +5,9 @@ import random
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 
-import matplotlib
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
+from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.figure import Figure
 import numpy as np
 
@@ -142,9 +142,17 @@ class MainWindow(QMainWindow):
             mensaje.setIcon(QMessageBox.Critical)
             mensaje.exec_()
         else:
-            archivo = open(self.nombre.text() + '.csv', 'w')
+            nombre = str(self.nombre.text().toUtf8())
+            archivo = open(nombre + '.csv', 'w')
             archivo.write(str(self.data)[1:-1] + '\n')
             archivo.close()
+
+            pdf = PdfPages(nombre + '.pdf')
+            self.fig.savefig(pdf, format='pdf')
+            pdf.close()
+
+            self.canvas.print_figure(nombre + '.png', dpi=self.dpi)
+
             mensaje = QMessageBox(self)
             mensaje.setText('La prueba a sido guardada correctamente')
             mensaje.setWindowTitle('Guardado con exito')
