@@ -78,7 +78,8 @@ class MainWindow(QMainWindow):
             linewidth = 1,
             color = (1, 1, 0),
             )[0]
-           
+
+        self.tiempoTrancurrido = 0
         self.timer = QTimer()
         self.timer.timeout.connect(self.refresh)
         self.lecturasXSegundo = 20
@@ -100,9 +101,10 @@ class MainWindow(QMainWindow):
         
     def comenzarPrueba(self):
         self.data = []
+        self.tiempoTrancurrido = 0
         self.draw_chart()
         if self.tiempoFijo.isChecked():
-            self.contadorPrincipal.setInterval(self.tiempoPrueba.value()*1000)
+            self.contadorPrincipal.setInterval(self.tiempoPrueba.value() * 1000)
         else:
             self.contadorPrincipal.setInterval(525600000) #Un año
         self.timer.start()
@@ -125,12 +127,16 @@ class MainWindow(QMainWindow):
     def doPause(self):
         if self.timer.isActive():
             self.timer.stop()
+            self.contadorPrincipal.stop()
             self.pause.setText('Reanudar')
         else:
             self.timer.start()
+            self.contadorPrincipal.setInterval(self.tiempoPrueba.value() * 1000 - self.tiempoTrancurrido)
+            self.contadorPrincipal.start()
             self.pause.setText('Pausar')
         
     def refresh(self):
+        self.tiempoTrancurrido += 1000 / self.lecturasXSegundo
         self.data.append(generaData())
         self.draw_chart()
         
