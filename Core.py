@@ -84,8 +84,7 @@ class MainWindow(QMainWindow):
         self.timer.setInterval(50)
         
         self.contadorPrincipal = QTimer()
-        self.contadorPrincipal.timeout.connect(self.detenerPrueba)
-        self.contadorPrincipal.setInterval(525600000) #Un año
+        self.contadorPrincipal.timeout.connect(self.comenzar.toggle)
         
         self.comenzar.toggled.connect(self.togglePrueba)
         
@@ -101,6 +100,10 @@ class MainWindow(QMainWindow):
     def comenzarPrueba(self):
         self.data = []
         self.draw_chart()
+        if self.tiempoFijo.isChecked():
+            self.contadorPrincipal.setInterval(self.tiempoPrueba.value()*1000)
+        else:
+            self.contadorPrincipal.setInterval(525600000) #Un año
         self.timer.start()
         self.contadorPrincipal.start()
         self.comenzar.setText('Detener')
