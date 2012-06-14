@@ -35,10 +35,14 @@ class MainWindow(QMainWindow):
         #Declaracion de interfaz grafica
         self.pause = QPushButton('Pausar')
         self.pause.setDisabled(True)
+        self.pause.clicked.connect(self.doPause)
+        
         self.comenzar = QPushButton('Comenzar')
         self.comenzar.setCheckable(True)
+        
         self.guardar = QPushButton('Guardar')
-        self.pause.clicked.connect(self.doPause)
+        self.guardar.clicked.connect(self.doGuardar)
+        
         self.nombreL = QLabel('Nombre de la prueba')
         self.nombre = QLineEdit()
         self.tiempoPrueba = QSpinBox()
@@ -123,6 +127,29 @@ class MainWindow(QMainWindow):
             self.tiempoPrueba.setDisabled(True)
         else:
             self.tiempoPrueba.setEnabled(True)
+            
+    def doGuardar(self):
+        if self.nombre.text() == '':
+            mensaje = QMessageBox(self)
+            mensaje.setText('Ingrese un nombre para la prueba')
+            mensaje.setWindowTitle('Error al guardar')
+            mensaje.setIcon(QMessageBox.Critical)
+            mensaje.exec_()
+        elif len(self.data) == 0:
+            mensaje = QMessageBox(self)
+            mensaje.setText('No hay datos para guardar')
+            mensaje.setWindowTitle('Error al guardar')
+            mensaje.setIcon(QMessageBox.Critical)
+            mensaje.exec_()
+        else:
+            archivo = open(self.nombre.text() + '.csv', 'w')
+            archivo.write(str(self.data)[1:-1] + '\n')
+            archivo.close()
+            mensaje = QMessageBox(self)
+            mensaje.setText('La prueba a sido guardada correctamente')
+            mensaje.setWindowTitle('Guardado con exito')
+            mensaje.setIcon(QMessageBox.Information)
+            mensaje.exec_()
         
     def doPause(self):
         if self.timer.isActive():
