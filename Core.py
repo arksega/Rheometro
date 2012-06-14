@@ -81,7 +81,8 @@ class MainWindow(QMainWindow):
            
         self.timer = QTimer()
         self.timer.timeout.connect(self.refresh)
-        self.timer.setInterval(50)
+        self.lecturasXSegundo = 20
+        self.timer.setInterval(1000 / self.lecturasXSegundo)
         
         self.contadorPrincipal = QTimer()
         self.contadorPrincipal.timeout.connect(self.comenzar.toggle)
@@ -135,14 +136,14 @@ class MainWindow(QMainWindow):
         
         
     def draw_chart(self):
-        count = (len(self.data) * 50) / 1000.0
+        count = round(len(self.data) * 1.0 / self.lecturasXSegundo, 3)
         xmax = count if count > 3 else 3
         xmin = xmax - 3
         
         self.axes.set_xbound(lower = xmin, upper = xmax)
         self.axes.set_ybound(lower = 0, upper = 1023)
         
-        self.line.set_xdata(np.arange(0,count, .050))
+        self.line.set_xdata(np.arange(0,count, 1.0 / self.lecturasXSegundo))
         self.line.set_ydata(np.array(self.data))
         
         self.canvas.draw()
