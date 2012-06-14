@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import sys
 import os
 import random
@@ -33,7 +34,9 @@ class MainWindow(QMainWindow):
         
         #Declaracion de interfaz grafica
         self.pause = QPushButton('Pausar')
+        self.pause.setDisabled(True)
         self.comenzar = QPushButton('Comenzar')
+        self.comenzar.setCheckable(True)
         self.guardar = QPushButton('Guardar')
         self.pause.clicked.connect(self.doPause)
         self.nombreL = QLabel('Nombre de la prueba')
@@ -79,9 +82,35 @@ class MainWindow(QMainWindow):
         self.timer = QTimer()
         self.timer.timeout.connect(self.refresh)
         self.timer.setInterval(40)
-        self.comenzar.clicked.connect(self.timer.start)
+        
+        self.contadorPrincipal = QTimer()
+        self.contadorPrincipal.timeout.connect(self.detenerPrueba)
+        self.contadorPrincipal.setInterval(525600000) #Un año
+        
+        self.comenzar.toggled.connect(self.togglePrueba)
         
         self.draw_chart()
+        
+    def detenerPrueba(self):
+        self.timer.stop()
+        self.contadorPrincipal.stop()
+        self.comenzar.setText('Comenzar')
+        self.pause.setText('Pausar')
+        self.pause.setDisabled(True)
+        
+    def comenzarPrueba(self):
+        self.data = []
+        self.draw_chart()
+        self.timer.start()
+        self.contadorPrincipal.start()
+        self.comenzar.setText('Detener')
+        self.pause.setDisabled(False)
+    
+    def togglePrueba(self):
+        if self.comenzar.isChecked():
+            self.comenzarPrueba()
+        else:
+            self.detenerPrueba()
         
     def cambiaPolitica(self):
         if self.tiempoIlimitado.isChecked():
