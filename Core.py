@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 import sys
+import serial
 import os
 import random
+import threading
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 
@@ -11,15 +13,30 @@ from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.figure import Figure
 import numpy as np
 
+class ReadArduino(threading.Thread):
+    def __init__(self):
+        self.active = True
+        #Inicializa serial
+        self.ser = serial.Serial('/dev/ttyACM1', 9600)
+        threading.Thread.__init__(self)
+        
+    def run(self):
+        while self.active:
+            self.data = self.ser.readline()
+    
+    def stop(self):
+        self.active = False
+            
 class MainWindow(QMainWindow):
     
     def __init__(self, parent = None):
         QMainWindow.__init__(self, parent)
         self.create_chart()
         
-        
     def create_chart(self):
-        
+        self.arduino = ReadArduino()
+        self.arduino.start()
+
         #Generacion de elementos principales de la grafica
         self.frame = QWidget()
         self.dpi = 100
@@ -172,7 +189,8 @@ class MainWindow(QMainWindow):
         
     def refresh(self):
         self.tiempoTrancurrido += 1000 / self.lecturasXSegundo
-        self.data.append(generaData())
+        #self.data.append(generaData())
+        self.data.append(int(self.arduino.data))
         self.draw_chart()
         
         
@@ -189,6 +207,8 @@ class MainWindow(QMainWindow):
         
         self.canvas.draw()
         
+    def closeEvent(self,event):
+        self.arduino.stop()
         
 def generaData():
     return random.randint(0,1023)
