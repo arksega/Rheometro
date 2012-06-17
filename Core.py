@@ -17,13 +17,29 @@ class ReadArduino(threading.Thread):
     def __init__(self):
         self.active = True
         #Inicializa serial
-        self.ser = serial.Serial('/dev/ttyACM1', 9600)
+        self.ser = serial.Serial('/dev/ttyACM2', 9600)
         threading.Thread.__init__(self)
         
     def run(self):
         while self.active:
             self.data = self.ser.readline()
     
+    def led0(self, estado):
+        comando = 'A' if estado else 'B'
+        self.ser.write(comando)
+
+    def led1(self, estado):
+        comando = 'C' if estado else 'D'
+        self.ser.write(comando)
+
+    def led2(self, estado):
+        comando = 'E' if estado else 'F'
+        self.ser.write(comando)
+
+    def led3(self, estado):
+        comando = 'G' if estado else 'H'
+        self.ser.write(comando)
+
     def stop(self):
         self.active = False
             
@@ -70,26 +86,48 @@ class MainWindow(QMainWindow):
         self.tiempoIlimitado = QRadioButton('Tiempo ilimitado')
         self.tiempoIlimitado.setChecked(True)
         self.grupoTiempo = QGroupBox('Manejo de tiempo')
+        self.grupoSignal = QGroupBox(u'Señales')
         self.tiempoIlimitado.toggled.connect(self.cambiaPolitica)
         
+        self.led0 = QPushButton('0')
+        self.led1 = QPushButton('1')
+        self.led2 = QPushButton('2')
+        self.led3 = QPushButton('3')
+        self.led0.setCheckable(True)
+        self.led1.setCheckable(True)
+        self.led2.setCheckable(True)
+        self.led3.setCheckable(True)
+        self.led0.toggled.connect(self.arduino.led0)
+        self.led1.toggled.connect(self.arduino.led1)
+        self.led2.toggled.connect(self.arduino.led2)
+        self.led3.toggled.connect(self.arduino.led3)
+
+        gt = QGridLayout()
+        gt.addWidget(self.tiempoIlimitado,0,0)
+        gt.addWidget(self.tiempoFijo,1,0)
+        gt.addWidget(self.tiempoPrueba,1,1)
+        gt.addWidget(self.pause,0,2,2,1)
+        self.grupoTiempo.setLayout(gt)
         
-        hbox = QGridLayout()
+        gs = QGridLayout()
+        gs.addWidget(self.led0,2,2)
+        gs.addWidget(self.led1,2,3)
+        gs.addWidget(self.led2,3,2)
+        gs.addWidget(self.led3,3,3)
+        self.grupoSignal.setLayout(gs)
         
-        hbox.addWidget(self.tiempoIlimitado,0,0)
-        hbox.addWidget(self.tiempoFijo,1,0)
-        hbox.addWidget(self.tiempoPrueba,1,1)
-        hbox.addWidget(self.pause,0,2,2,1)
-        self.grupoTiempo.setLayout(hbox)
+        gp = QGridLayout()
+        gp.addWidget(self.nombreL,1,0)
+        gp.addWidget(self.nombre,1,1,)
+        gp.addWidget(self.comenzar,1,2)
+        gp.addWidget(self.guardar,1,3)
+        gp.addWidget(self.grupoTiempo,2,0,1,2)
+        gp.addWidget(self.grupoSignal,2,2,1,2)
+        gp.addWidget(self.canvas,0,0,1,4)
         
-        vbox = QGridLayout()
-        vbox.addWidget(self.nombreL,1,0)
-        vbox.addWidget(self.nombre,1,1,)
-        vbox.addWidget(self.comenzar,1,2)
-        vbox.addWidget(self.guardar,1,3)
-        vbox.addWidget(self.grupoTiempo,2,0,1,2)
-        vbox.addWidget(self.canvas,0,0,1,4)
+
         
-        self.frame.setLayout(vbox)
+        self.frame.setLayout(gp)
         self.setCentralWidget(self.frame)
         self.data = []
         
