@@ -267,7 +267,7 @@ class MainWindow(QMainWindow):
         """Regenera la grafica"""
         count = round(len(self.data) * 1.0 / self.lecturasXSegundo, 3)
         xmax = count if count > 3 else 3
-        xmin = xmax - 3
+        xmin = 0
 
         self.axes.set_xbound(lower=xmin, upper=xmax)
         self.axes.set_ybound(lower=0, upper=1023)
