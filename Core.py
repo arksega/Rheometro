@@ -3,6 +3,7 @@ import sys
 import serial
 import os
 import random
+import re
 import threading
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
@@ -19,9 +20,24 @@ import numpy as np
 class ReadArduino(threading.Thread):
     def __init__(self):
         self.active = True
+
+        # Obtiene el nombre de los dipositivos arduino
+        devs = os.listdir('/dev/')
+        devs = filter(self.name, devs)
+
         # Inicializa serial
-        self.ser = serial.Serial('/dev/ttyACM0', 9600)
+        for dev in devs:
+            try:
+                self.ser = serial.Serial('/dev/' + dev, 9600)
+            except:
+                print '/dev/' + dev + ' no esta disponible'
+            else:
+                break
+
         threading.Thread.__init__(self)
+
+    def name(self, dev):
+        return re.match(r'.*ACM', dev)
 
     def run(self):
         while self.active:
