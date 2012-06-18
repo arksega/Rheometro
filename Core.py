@@ -18,6 +18,10 @@ import numpy as np
 
 
 class ReadArduino(threading.Thread):
+    """Esta clase lee constantemente la salida del arduino y hace disponible
+    el ultimo valor.
+
+    Los metodos led# controlan el estado de las salidas 13, 12, 8 y 7"""
     def __init__(self):
         self.active = True
 
@@ -67,46 +71,49 @@ class MainWindow(QMainWindow):
 
     def __init__(self, parent=None):
         QMainWindow.__init__(self, parent)
-        self.create_chart()
+        self.createGUI()
 
-    def create_chart(self):
+    def createGUI(self):
+        """Crea y configura todos los elementos de la itefaz"""
         self.arduino = ReadArduino()
         self.arduino.start()
 
         # Generacion de elementos principales de la grafica
-        self.frame = QWidget()
         self.dpi = 100
         self.fig = Figure((6.0, 5.0), dpi=self.dpi)
         self.canvas = FigureCanvas(self.fig)
-        self.canvas.setParent(self.frame)
+        #self.canvas.setParent(self.frame)
 
         # Configuracion de la grafica
         self.axes = self.fig.add_subplot(111)
         self.axes.set_axis_bgcolor('black')
         self.axes.grid(True, color='gray')
 
-        # Declaracion de interfaz grafica
+        # Declaracion de interfaz
         self.pause = QPushButton('Pausar')
         self.pause.setDisabled(True)
         self.pause.clicked.connect(self.doPause)
 
         self.comenzar = QPushButton('Comenzar')
         self.comenzar.setCheckable(True)
+        self.comenzar.toggled.connect(self.togglePrueba)
 
         self.guardar = QPushButton('Guardar')
         self.guardar.clicked.connect(self.doGuardar)
 
         self.nombreL = QLabel('Nombre de la prueba')
         self.nombre = QLineEdit()
+
         self.tiempoPrueba = QSpinBox()
         self.tiempoPrueba.setMinimum(1)
         self.tiempoPrueba.setDisabled(True)
+
+        self.grupoTiempo = QGroupBox('Manejo de tiempo')
+        self.grupoSignal = QGroupBox(u'Señales')
         self.politicaTiempo = QButtonGroup()
         self.tiempoFijo = QRadioButton('Tiempo fijo')
         self.tiempoIlimitado = QRadioButton('Tiempo ilimitado')
         self.tiempoIlimitado.setChecked(True)
-        self.grupoTiempo = QGroupBox('Manejo de tiempo')
-        self.grupoSignal = QGroupBox(u'Señales')
         self.tiempoIlimitado.toggled.connect(self.cambiaPolitica)
 
         self.led0 = QPushButton('0')
@@ -122,6 +129,7 @@ class MainWindow(QMainWindow):
         self.led2.toggled.connect(self.arduino.led2)
         self.led3.toggled.connect(self.arduino.led3)
 
+        # Configuracion de la interfaz
         gt = QGridLayout()
         gt.addWidget(self.tiempoIlimitado, 0, 0)
         gt.addWidget(self.tiempoFijo, 1, 0)
@@ -145,31 +153,31 @@ class MainWindow(QMainWindow):
         gp.addWidget(self.grupoSignal, 2, 2, 1, 2)
         gp.addWidget(self.canvas, 0, 0, 1, 4)
 
+        self.frame = QWidget()
         self.frame.setLayout(gp)
         self.setCentralWidget(self.frame)
-        self.data = []
 
+        self.data = []
         self.line = self.axes.plot(
             self.data,
             linewidth=1,
             color=(1, 1, 0),
             )[0]
 
+        # Manejo de tiempo
         self.tiempoTrancurrido = 0
-        self.timer = QTimer()
-        self.timer.timeout.connect(self.refresh)
+        self.contadorActializa = QTimer()
+        self.contadorActializa.timeout.connect(self.refresh)
         self.lecturasXSegundo = 20
-        self.timer.setInterval(1000 / self.lecturasXSegundo)
+        self.contadorActializa.setInterval(1000 / self.lecturasXSegundo)
 
         self.contadorPrincipal = QTimer()
         self.contadorPrincipal.timeout.connect(self.comenzar.toggle)
 
-        self.comenzar.toggled.connect(self.togglePrueba)
-
         self.draw_chart()
 
     def detenerPrueba(self):
-        self.timer.stop()
+        self.contadorActializa.stop()
         self.contadorPrincipal.stop()
         self.comenzar.setText('Comenzar')
         self.pause.setText('Pausar')
@@ -184,24 +192,27 @@ class MainWindow(QMainWindow):
                 self.tiempoPrueba.value() * 1000)
         else:
             self.contadorPrincipal.setInterval(525600000)  # Un año
-        self.timer.start()
+        self.contadorActializa.start()
         self.contadorPrincipal.start()
         self.comenzar.setText('Detener')
         self.pause.setDisabled(False)
 
     def togglePrueba(self):
+        """Metodo para comenzar y detener la prueba actual"""
         if self.comenzar.isChecked():
             self.comenzarPrueba()
         else:
             self.detenerPrueba()
 
     def cambiaPolitica(self):
+        """Habilita la interfaz para manejo manual del tiempo"""
         if self.tiempoIlimitado.isChecked():
             self.tiempoPrueba.setDisabled(True)
         else:
             self.tiempoPrueba.setEnabled(True)
 
     def doGuardar(self):
+        """Verifica la existencia de datos y los guarda en png, cvs y pdf"""
         if self.nombre.text() == '':
             mensaje = QMessageBox(self)
             mensaje.setText('Ingrese un nombre para la prueba')
@@ -233,24 +244,27 @@ class MainWindow(QMainWindow):
             mensaje.exec_()
 
     def doPause(self):
-        if self.timer.isActive():
-            self.timer.stop()
+        """Maneja las pausas de la aplicación"""
+        if self.contadorActializa.isActive():
+            self.contadorActializa.stop()
             self.contadorPrincipal.stop()
             self.pause.setText('Reanudar')
         else:
-            self.timer.start()
+            self.contadorActializa.start()
+            # Recalcula el tiempo restante de la prueba
             self.contadorPrincipal.setInterval(
                 self.tiempoPrueba.value() * 1000 - self.tiempoTrancurrido)
             self.contadorPrincipal.start()
             self.pause.setText('Pausar')
 
     def refresh(self):
+        """Agrega un dato al conjunto y regenera la gráfica"""
         self.tiempoTrancurrido += 1000 / self.lecturasXSegundo
-        #self.data.append(generaData())
         self.data.append(int(self.arduino.data))
         self.draw_chart()
 
     def draw_chart(self):
+        """Regenera la grafica"""
         count = round(len(self.data) * 1.0 / self.lecturasXSegundo, 3)
         xmax = count if count > 3 else 3
         xmin = xmax - 3
