@@ -30,9 +30,11 @@ class ReadArduino(threading.Thread):
         devs = filter(self.name, devs)
 
         # Inicializa serial
+        self.arduinos = []
         for dev in devs:
             try:
                 self.ser = serial.Serial('/dev/' + dev, 9600)
+                self.arduinos.append(dev)
             except:
                 print '/dev/' + dev + ' no esta disponible'
             else:
@@ -76,6 +78,14 @@ class MainWindow(QMainWindow):
     def createGUI(self):
         """Crea y configura todos los elementos de la itefaz"""
         self.arduino = ReadArduino()
+
+        if len(self.arduino.arduinos) < 1:
+          mensaje = QMessageBox(self)
+          mensaje.setText('No hay algun arduino para trabajar')
+          mensaje.setWindowTitle('Hardware no disponible')
+          mensaje.setIcon(QMessageBox.Critical)
+          mensaje.exec_()
+          exit()
         self.arduino.start()
 
         # Generacion de elementos principales de la grafica
